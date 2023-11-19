@@ -16,20 +16,35 @@ app.get('/generate-question-paper', (req, res) => {
     medium: 0.5,
     hard: 0.3,
   };
-
+  const topicDistribution = {
+    Waves: 0.4,
+    Optics: 0.3,
+    Thermodynamics: 0.3,
+  };
   const questionPaper = generateQuestionPaper(totalMarks, difficultyDistribution);
   res.json({ questionPaper });
 });
 
+function getQuestionsByTopicAndDifficulty(questions, topic, difficulty, marks) {
+  return questions
+    .filter((question) => question.topic.toLowerCase() === topic.toLowerCase())
+    .filter((question) => question.difficulty.toLowerCase() === difficulty.toLowerCase())
+    .slice(0, marks);
+}
+
 // Function to generate a question paper
-function generateQuestionPaper(totalMarks, difficultyDistribution) {
+function generateQuestionPaperWithTopics(totalMarks, difficultyDistribution, topicDistribution) {
   const questionPaper = [];
-  const availableQuestions = questionStore.getQuestions(); // Implement getQuestions() in questionStore.js
+  const availableQuestions = questionStore.getQuestions();
 
   Object.entries(difficultyDistribution).forEach(([difficulty, percentage]) => {
     const marksForDifficulty = totalMarks * percentage;
-    const questions = getQuestionsByDifficulty(availableQuestions, difficulty, marksForDifficulty);
-    questionPaper.push(...questions);
+
+    Object.entries(topicDistribution).forEach(([topic, topicPercentage]) => {
+      const marksForTopic = marksForDifficulty * topicPercentage;
+      const questions = getQuestionsByTopicAndDifficulty(availableQuestions, topic, difficulty, marksForTopic);
+      questionPaper.push(...questions);
+    });
   });
 
   return questionPaper;
